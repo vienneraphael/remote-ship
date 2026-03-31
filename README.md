@@ -71,11 +71,9 @@ Go to ChatGPT on your browser
 In ChatGPT settings > “Security” > “Enable device code authorization for Codex”
 
 Run this command:
-`codex`
+`codex login --device-auth`
 
-Select “Login with Device Code”
-
-Then quit codex
+Copy code, connect in your browser and paste it
 
 ### Setup phone connection
 
