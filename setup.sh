@@ -31,7 +31,7 @@ if [ -z "$NAME" ] || [ -z "$EMAIL" ] || [ -z "$USER" ]; then
     exit 1
 fi
 
-sudo apt-get update && sudo apt-get upgrade -y
+sudo apt-get update
 
 git config --global user.name "$NAME"
 git config --global user.email "$EMAIL"
