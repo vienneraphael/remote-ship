@@ -43,7 +43,7 @@ Then enter your password, you should be connected to your RPI.
 ### Launch the setup script
 
 Run this command:
-`curl -sSL https://raw.githubusercontent.com/vienneraphael/remote-ship/main/setup.sh | bash -s -- -n "Your Name" -e "github-email@example.com -u "rpi-user-name" -i "Your.Tailscale.RPI.IP"`
+`curl -sSL https://raw.githubusercontent.com/vienneraphael/remote-ship/main/setup.sh | bash -s -- -n "Your Name" -e "github-email@example.com" -u "rpi-user-name" -i "Your.Tailscale.RPI.IP"`
 
 
 Then run: `gh auth login`
@@ -58,7 +58,12 @@ For each of the repos you wish to work in, clone it at RPI root:
 
 `git clone git@github.com:<your-handle>/<your-repo.git>`
 
-For each repo you clone, you can add a `worktree_init/repo-name.sh` script that will be launched whenever your start shipping a new feature in the newly-created worktree.
+For each repo you clone, you can add an init script at `~/worktree_init/repo-name.sh`.
+
+Example for a repo cloned as `~/my-app`:
+`~/worktree_init/my-app.sh`
+
+When `ship` creates a new worktree for that repo, it will run the matching init script inside the new tmux session before launching Codex. If the init script exits non-zero, `ship` leaves the session open and does not launch Codex.
 
 ### Login to codex
 
@@ -94,6 +99,12 @@ Open Termux on your phone. Create an alias in `.bashrc` like so:
 
 Then run: `source .bashrc`
 
+The setup script also installs:
+- `tmux`
+- `gh`
+- `@openai/codex`
+- the `ship` and `unship` helpers in `~/.bash_functions`
+
 ## Using remote-ship
 
 ### Classic User Flow
@@ -102,14 +113,19 @@ Then run: `source .bashrc`
 2. Open a Termux session
 3. launch the `connect` command
 4. Enter RPI password
-5. launch a thread using `ship -n <thread-name> -p <project-name> -b <base-branch>
+5. launch a thread using `ship -n <thread-name> -p <project-path> -b <base-branch>`
 6. Ship from your phone within termux
 7. Once done, go back to Termux, terminate codex session with CTRL + C and run `unship`, it will automatically cleanup the worktree and tmux session.
+
+Notes:
+- `-p` can be the repo path or `.` if you are already inside the repo.
+- Worktrees are created under `~/worktrees/<repo-name>/<thread-name>`.
+- Branches are created as `fly/<thread-name>`.
 
 ### Open Concurrent Threads
 If you want to open a second thread while one processes:
 1. quit the tmux session using Ctrl + B + D
-2. re-run `ship -n <name> -p <project-name> -b <base-branch>, ship from there
+2. re-run `ship -n <name> -p <project-path> -b <base-branch>`, then ship from there
 
 ### Cleanup a thread from root
 To cleanup a thread from root, use `unship -n <name>`
