@@ -2,7 +2,6 @@
 
 NAME=""
 EMAIL=""
-USER=""
 BASH_FUNCTIONS_URL="https://raw.githubusercontent.com/vienneraphael/remote-ship/main/bash_functions.sh"
 
 append_line_if_missing() {
@@ -16,18 +15,17 @@ append_line_if_missing() {
     fi
 }
 
-while getopts "n:e:u:" opt; do
+while getopts "n:e:" opt; do
     case "$opt" in
         n) NAME="$OPTARG" ;;
         e) EMAIL="$OPTARG" ;;
-        u) USER="$OPTARG" ;;
-        *) echo "Usage: $0 -n 'Name' -e 'email' -u 'user'"; exit 1 ;;
+        *) echo "Usage: $0 -n 'Name' -e 'email'"; exit 1 ;;
     esac
 done
 
-if [ -z "$NAME" ] || [ -z "$EMAIL" ] || [ -z "$USER" ]; then
-    echo "Error: All flags (-n, -e, -u) are mandatory."
-    echo "Usage: $0 -n 'Name' -e 'email' -u 'pi'"
+if [ -z "$NAME" ] || [ -z "$EMAIL" ]; then
+    echo "Error: All flags (-n, -e) are mandatory."
+    echo "Usage: $0 -n 'Name' -e 'email'"
     exit 1
 fi
 
@@ -60,7 +58,6 @@ mkdir -p "$HOME/worktrees"
 echo "------------------------------------"
 echo "Setup Complete!"
 echo "Git Name:   $(git config --global user.name)"
-echo "SSH User:   $USER"
 echo "Init Path:  $HOME/worktree_init"
 echo "------------------------------------"
 
