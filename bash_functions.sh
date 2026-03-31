@@ -23,10 +23,10 @@ ship() {
     
     local REPO_ROOT=$(pwd)
     local REPO_NAME=$(basename "$REPO_ROOT")
-    local WT_ROOT="../worktrees/$REPO_NAME"
+    local WT_ROOT="~/worktrees/$REPO_NAME"
     local TARGET_DIR="$WT_ROOT/$NAME"
     local FULL_BRANCH="fly/$NAME"
-    local INIT_SCRIPT="worktree_init/${REPO_NAME}.sh"
+    local INIT_SCRIPT="~/worktree_init/${REPO_NAME}.sh"
 
     mkdir -p "$WT_ROOT"
 
