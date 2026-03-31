@@ -37,6 +37,12 @@ _ship_init_script_path() {
     echo "$HOME/worktree_init/${repo_name}.sh"
 }
 
+_ship_branch_name() {
+    local name="$1"
+
+    echo "fly/$name"
+}
+
 _ship_tmux_startup_command() {
     local init_script="$1"
     local quoted_init_script
@@ -61,11 +67,13 @@ EOF
 
 _ship_worktree_path_from_name() {
     local session_name="$1"
-    local expected_branch="fly/$session_name"
+    local expected_branch
     local base_dir="$HOME/worktrees"
     local matches=""
     local candidate=""
     local branch_name=""
+
+    expected_branch=$(_ship_branch_name "$session_name")
 
     if [ ! -d "$base_dir" ]; then
         return 1
@@ -136,7 +144,7 @@ ship() {
     repo_name=$(basename "$repo_root")
     worktree_root="$HOME/worktrees/$repo_name"
     target_dir="$worktree_root/$name"
-    branch_name="fly/$name"
+    branch_name=$(_ship_branch_name "$name")
     init_script=$(_ship_init_script_path "$repo_name")
 
     mkdir -p "$worktree_root" || {
@@ -188,6 +196,8 @@ unship() {
     local worktree_path=""
     local worktree_status=0
     local repo_root=""
+    local branch_name=""
+    local should_kill_tmux=0
 
     while getopts "n:" opt; do
         case "$opt" in
@@ -212,16 +222,19 @@ unship() {
 
     echo "Unshipping session '$name'..."
 
+    branch_name=$(_ship_branch_name "$name")
     worktree_path=$(_ship_worktree_path_from_name "$name")
     worktree_status=$?
 
     if command -v tmux >/dev/null 2>&1; then
-        tmux kill-session -t "$name" 2>/dev/null
+        should_kill_tmux=1
     fi
 
     if [ "$worktree_status" -eq 2 ]; then
         return 1
     fi
+
+    cd "$HOME" || return 1
 
     if [ "$worktree_status" -eq 0 ] && [ -n "$worktree_path" ]; then
         repo_root=$(_ship_repo_root_from_worktree "$worktree_path") || {
@@ -229,10 +242,26 @@ unship() {
             return 1
         }
 
-        git -C "$repo_root" worktree remove "$worktree_path" && echo "Worktree '$name' removed."
+        git -C "$repo_root" worktree remove --force "$worktree_path" || {
+            echo "Warning: Could not remove worktree '$worktree_path'."
+            return 1
+        }
+
+        git -C "$repo_root" worktree prune >/dev/null 2>&1
+
+        if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch_name"; then
+            git -C "$repo_root" branch -D "$branch_name" >/dev/null 2>&1 || {
+                echo "Warning: Worktree removed, but branch '$branch_name' could not be deleted."
+                return 1
+            }
+        fi
+
+        echo "Worktree '$name' removed."
     else
-        echo "Warning: No worktree found for branch 'fly/$name'."
+        echo "Warning: No worktree found for branch '$branch_name'."
     fi
 
-    cd "$HOME" || return 1
+    if [ "$should_kill_tmux" -eq 1 ]; then
+        tmux kill-session -t "$name" 2>/dev/null
+    fi
 }
