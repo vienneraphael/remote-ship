@@ -3,6 +3,8 @@
 NAME=""
 EMAIL=""
 BASH_FUNCTIONS_URL="https://raw.githubusercontent.com/vienneraphael/remote-ship/main/bash_functions.sh"
+RETRY_ATTEMPTS=3
+RETRY_DELAY_SECONDS=3
 
 append_line_if_missing() {
     local file_path="$1"
@@ -13,6 +15,26 @@ append_line_if_missing() {
     if ! grep -Fqx "$line" "$file_path"; then
         echo "$line" >>"$file_path"
     fi
+}
+
+retry() {
+    local attempts="$1"
+    shift
+
+    local attempt=1
+    while true; do
+        if "$@"; then
+            return 0
+        fi
+
+        if [ "$attempt" -ge "$attempts" ]; then
+            return 1
+        fi
+
+        echo "Retry $attempt/$attempts failed. Retrying in ${RETRY_DELAY_SECONDS}s..."
+        sleep "$RETRY_DELAY_SECONDS"
+        attempt=$((attempt + 1))
+    done
 }
 
 while getopts "n:e:" opt; do
@@ -29,7 +51,10 @@ if [ -z "$NAME" ] || [ -z "$EMAIL" ]; then
     exit 1
 fi
 
-sudo apt-get update
+retry "$RETRY_ATTEMPTS" sudo apt-get update || {
+    echo "Error: Failed to update apt package lists after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
 
 git config --global user.name "$NAME"
 git config --global user.email "$EMAIL"
@@ -37,14 +62,36 @@ git config --global push.autoSetupRemote true
 
 ssh-keygen -t ed25519 -C "raspberry-pi" -f "$HOME/.ssh/id_ed25519" -N ""
 
-sudo apt install -y gh npm tmux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-sudo npm i -g @bubblewrap/cli
-sudo npm i -g @openai/codex
-curl -fsSL https://tailscale.com/install.sh | sh
+retry "$RETRY_ATTEMPTS" sudo apt install -y gh npm tmux || {
+    echo "Error: Failed to install apt packages after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
+
+retry "$RETRY_ATTEMPTS" bash -lc "curl -LsSf https://astral.sh/uv/install.sh | sh" || {
+    echo "Error: Failed to install uv after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
+
+retry "$RETRY_ATTEMPTS" sudo npm i -g @bubblewrap/cli || {
+    echo "Error: Failed to install @bubblewrap/cli after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
+
+retry "$RETRY_ATTEMPTS" sudo npm i -g @openai/codex || {
+    echo "Error: Failed to install @openai/codex after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
+
+retry "$RETRY_ATTEMPTS" bash -lc "curl -fsSL https://tailscale.com/install.sh | sh" || {
+    echo "Error: Failed to install Tailscale after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
 
 echo "Fetching bash functions..."
-curl -LsSf "$BASH_FUNCTIONS_URL" -o "$HOME/.bash_functions"
+retry "$RETRY_ATTEMPTS" curl -LsSf "$BASH_FUNCTIONS_URL" -o "$HOME/.bash_functions" || {
+    echo "Error: Failed to download bash functions after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
 
 echo "Updating shell configuration..."
 append_line_if_missing "$HOME/.bashrc" ""
