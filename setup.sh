@@ -63,3 +63,5 @@ echo "Git Name:   $(git config --global user.name)"
 echo "SSH User:   $USER"
 echo "Init Path:  $HOME/worktree_init"
 echo "------------------------------------"
+
+exec $SHELL
