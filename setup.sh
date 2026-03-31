@@ -62,7 +62,7 @@ git config --global push.autoSetupRemote true
 
 ssh-keygen -t ed25519 -C "raspberry-pi" -f "$HOME/.ssh/id_ed25519" -N ""
 
-retry "$RETRY_ATTEMPTS" sudo apt install -y gh npm tmux || {
+retry "$RETRY_ATTEMPTS" sudo apt install -y bubblewrap gh npm tmux || {
     echo "Error: Failed to install apt packages after $RETRY_ATTEMPTS attempts."
     exit 1
 }
@@ -74,11 +74,6 @@ retry "$RETRY_ATTEMPTS" bash -lc "curl -LsSf https://astral.sh/uv/install.sh | s
 
 retry "$RETRY_ATTEMPTS" sudo npm i -g @bubblewrap/cli || {
     echo "Error: Failed to install @bubblewrap/cli after $RETRY_ATTEMPTS attempts."
-    exit 1
-}
-
-retry "$RETRY_ATTEMPTS" sudo npm i -g @openai/codex || {
-    echo "Error: Failed to install @openai/codex after $RETRY_ATTEMPTS attempts."
     exit 1
 }
 
