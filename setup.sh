@@ -39,7 +39,6 @@ ssh-keygen -t ed25519 -C "raspberry-pi" -f ~/.ssh/id_ed25519 -N ""
 sudo apt install -y gh npm
 curl -LsSf https://astral.sh/uv/install.sh | sh
 sudo npm i -g @openai/codex
-sudo npm install -g happy-coder
 
 # --- New Logic ---
 

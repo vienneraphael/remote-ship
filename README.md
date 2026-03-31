@@ -18,7 +18,6 @@ Then, launch the image build and wait for it to finish.
 In the meantime, open your phone and download from the store:
 - Termux
 - Tailscale
-- Happy
 
 Once done, setup your Tailscale account.
 
@@ -31,6 +30,11 @@ You should see a flashing green light. It should take a few minutes to install.
 Once the green light stops flashing, try connecting to your RPI on same WiFi to verify setup, run:
 
 `ssh user-name@pi-name`
+
+If it does not work try:
+
+- `ssh user-name@pi-name.local`
+- `ssh user-name@pi-name.lan`
 
 Then enter your password, you should be connected to your RPI.
 
