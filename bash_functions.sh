@@ -43,7 +43,7 @@ ship() {
         tmux send-keys -t "$NAME" "bash '$REPO_ROOT/$INIT_SCRIPT'" C-m
     fi
 
-    tmux send-keys -t "$NAME" "happy codex" C-m
+    tmux send-keys -t "$NAME" "codex" C-m
 
     # Finally, attach to the session
     tmux attach-session -t "$NAME"
