@@ -113,19 +113,24 @@ The setup script also installs:
 2. Open a Termux session
 3. launch the `connect` command
 4. Enter RPI password
-5. launch a thread using `ship -n <thread-name> -p <project-path> -b <base-branch>`
+5. launch a thread using `ship <thread-name> <project-path> <base-branch>`
 6. Ship from your phone within termux
 7. Once done, go back to Termux, terminate codex session with CTRL + C and run `unship`, it will automatically cleanup the worktree and tmux session.
 
 Notes:
+- `ship <thread-name> <project-path>` also works and defaults the base branch to `main`.
+- `ship <thread-name>` works too if you are already inside the repo.
 - `-p` can be the repo path or `.` if you are already inside the repo.
+- Flag form still works: `ship -n <thread-name> -p <project-path> -b <base-branch>`.
 - Worktrees are created under `~/worktrees/<repo-name>/<thread-name>`.
 - Branches are created as `fly/<thread-name>`.
 
 ### Open Concurrent Threads
 If you want to open a second thread while one processes:
 1. quit the tmux session using Ctrl + B + D
-2. re-run `ship -n <name> -p <project-path> -b <base-branch>`, then ship from there
+2. re-run `ship <name> <project-path> <base-branch>`, then ship from there
 
 ### Cleanup a thread from root
-To cleanup a thread from root, use `unship -n <name>`
+To cleanup a thread from root, use `unship <name>`
+
+Flag form still works: `unship -n <name>`.

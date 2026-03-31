@@ -1,9 +1,11 @@
 _ship_usage() {
-    echo "Usage: ship [-n name] [-p project-path] [-b base-branch]"
+    echo "Usage: ship [name] [project-path] [base-branch]"
+    echo "       ship [-n name] [-p project-path] [-b base-branch]"
 }
 
 _unship_usage() {
-    echo "Usage: unship [-n name]"
+    echo "Usage: unship [name]"
+    echo "       unship [-n name]"
 }
 
 _ship_random_name() {
@@ -109,7 +111,7 @@ _ship_repo_root_from_worktree() {
 
 ship() {
     local OPTIND=1
-    local name
+    local name=""
     local project_dir="."
     local base_branch="main"
     local repo_root=""
@@ -119,8 +121,7 @@ ship() {
     local branch_name=""
     local init_script=""
     local startup_command=""
-
-    name=$(_ship_random_name)
+    local positional_args=()
 
     while getopts "n:p:b:" opt; do
         case "$opt" in
@@ -131,6 +132,29 @@ ship() {
         esac
     done
     shift $((OPTIND - 1))
+
+    positional_args=("$@")
+
+    if [ "${#positional_args[@]}" -gt 3 ]; then
+        _ship_usage
+        return 1
+    fi
+
+    if [ -z "$name" ] && [ "${#positional_args[@]}" -ge 1 ]; then
+        name="${positional_args[0]}"
+    fi
+
+    if [ "$project_dir" = "." ] && [ "${#positional_args[@]}" -ge 2 ]; then
+        project_dir="${positional_args[1]}"
+    fi
+
+    if [ "$base_branch" = "main" ] && [ "${#positional_args[@]}" -ge 3 ]; then
+        base_branch="${positional_args[2]}"
+    fi
+
+    if [ -z "$name" ]; then
+        name=$(_ship_random_name)
+    fi
 
     _ship_require_command git || return 1
     _ship_require_command tmux || return 1
@@ -198,6 +222,7 @@ unship() {
     local repo_root=""
     local branch_name=""
     local should_kill_tmux=0
+    local positional_args=()
 
     while getopts "n:" opt; do
         case "$opt" in
@@ -206,6 +231,17 @@ unship() {
         esac
     done
     shift $((OPTIND - 1))
+
+    positional_args=("$@")
+
+    if [ "${#positional_args[@]}" -gt 1 ]; then
+        _unship_usage
+        return 1
+    fi
+
+    if [ -z "$name" ] && [ "${#positional_args[@]}" -eq 1 ]; then
+        name="${positional_args[0]}"
+    fi
 
     _ship_require_command git || return 1
 
