@@ -45,7 +45,8 @@ Then enter your password, you should be connected to your RPI.
 Run this command:
 `curl -sSL https://raw.githubusercontent.com/vienneraphael/remote-ship/main/setup.sh | bash -s -- -n "Your Name" -e "github-email@example.com -u "rpi-user-name" -i "Your.Tailscale.RPI.IP"`
 
-The script should finish by the terminal prompt launched by `gh auth login`
+
+Then run: `gh auth login`
 
 Select “Github.com” > “SSH” > Select your SSH key > name your key > Login with a web browser
 
@@ -55,27 +56,43 @@ This should fail: open the URL on your computer browser and paste the code.
 
 For each of the repos you wish to work in, clone it at RPI root:
 
-`git clone git@github.com:<your-handle>/<your-repo.git>
+`git clone git@github.com:<your-handle>/<your-repo.git>`
 
 For each repo you clone, you can add a `worktree_init/repo-name.sh` script that will be launched whenever your start shipping a new feature in the newly-created worktree.
 
 ### Login to codex
 
+Go to ChatGPT on your browser
+In ChatGPT settings > “Security” > “Enable device code authorization for Codex”
+
 Run this command:
 `codex`
-
-In ChatGPT settings > “Security” > “Enable device code authorization for Codex”
 
 Select “Login with Device Code”
 
 Then quit codex
 
-### Connect phone to RPI
+### Setup phone connection
 
-Run this command:
-`happy --auth`
+On your RPI, launch background tailscale:
 
-Scan the QR code using your phone to link it to your RPI.
+`sudo tailscale up`
+
+If it fails, try logging in first:
+
+`sudo tailscale login`
+
+Then re-run: `sudo tailscale up`
+
+Then follow the url, connect to your tailscale account.
+Once redirected, note the IP address of your RPI in the tailnet
+
+To verify Tailscale installation, try pinging the RPI from your phone app.
+
+Open Termux on your phone. Create an alias in `.bashrc` like so:
+`alias connect="ssh user-name@tailscale-rpi-ip"`
+
+Then run: `source .bashrc`
 
 ## Using remote-ship
 
@@ -86,8 +103,8 @@ Scan the QR code using your phone to link it to your RPI.
 3. launch the `connect` command
 4. Enter RPI password
 5. launch a thread using `ship -n <thread-name> -p <project-name> -b <base-branch>
-6. Open the Happy phone app, ship from your phone
-7. Once done, go back to Termux, terminate happy session and run `unship`, it will automatically cleanup the worktree and tmux session.
+6. Ship from your phone within termux
+7. Once done, go back to Termux, terminate codex session with CTRL + C and run `unship`, it will automatically cleanup the worktree and tmux session.
 
 ### Open Concurrent Threads
 If you want to open a second thread while one processes:

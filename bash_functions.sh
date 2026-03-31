@@ -1,10 +1,12 @@
+# --- SHIP FUNCTION ---
+# Creates a git worktree, sets up a tmux session, and runs init scripts
 ship() {
-    # Default values
-    local NAME=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
+    local OPTIND=1 
+    # FIX 1: Use 'head' on urandom instead of 'cat' to prevent hanging
+    local NAME=$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
     local PROJECT_DIR="."
     local BASE_BRANCH="main"
 
-    local OPTIND
     while getopts "n:p:b:" opt; do
       case $opt in
         n) NAME=$OPTARG ;;
@@ -13,42 +15,52 @@ ship() {
         *) echo "Usage: ship [-n name] [-p project-path] [-b base-branch]"; return 1 ;;
       esac
     done
-    shift $((OPTIND -1))
+    shift $((OPTIND - 1))
 
-    # Identify project details while at the original root
-    cd "$PROJECT_DIR" || { echo "Project directory not found"; return 1; }
+    # Save original directory so we can return if it fails
+    local START_DIR=$(pwd)
+    cd "$PROJECT_DIR" || { echo "Error: Path '$PROJECT_DIR' not found"; return 1; }
+    
     local REPO_ROOT=$(pwd)
     local REPO_NAME=$(basename "$REPO_ROOT")
     local WT_ROOT="../worktrees/$REPO_NAME"
     local TARGET_DIR="$WT_ROOT/$NAME"
-    local FULL_BRANCH="happy/$NAME"
+    local FULL_BRANCH="fly/$NAME"
     local INIT_SCRIPT="worktree_init/${REPO_NAME}.sh"
 
     mkdir -p "$WT_ROOT"
 
     echo "Creating worktree: $NAME..."
-    git worktree add -b "$FULL_BRANCH" "$TARGET_DIR" "$BASE_BRANCH" || return 1
+    # FIX 2: Check if branch exists to avoid git hanging/erroring
+    if git rev-parse --verify "$FULL_BRANCH" >/dev/null 2>&1; then
+        echo "Error: Branch $FULL_BRANCH already exists. Use 'unship -n $NAME' first."
+        cd "$START_DIR"
+        return 1
+    fi
 
-    # Start tmux session detached
+    git worktree add -b "$FULL_BRANCH" "$TARGET_DIR" "$BASE_BRANCH" || { cd "$START_DIR"; return 1; }
+
+    # Setup Tmux
     tmux new-session -d -s "$NAME"
-
-    # Send setup commands to the tmux session
-    # 1. CD into the new worktree
-    # 2. Check and run the init script (using the absolute path from the original root)
-    # 3. Run happy codex
     tmux send-keys -t "$NAME" "cd '$TARGET_DIR'" C-m
-    
+
     if [ -f "$REPO_ROOT/$INIT_SCRIPT" ]; then
-        echo "Queuing init script in tmux..."
         tmux send-keys -t "$NAME" "bash '$REPO_ROOT/$INIT_SCRIPT'" C-m
     fi
 
     tmux send-keys -t "$NAME" "codex" C-m
 
-    # Finally, attach to the session
-    tmux attach-session -t "$NAME"
+    if [ -n "$TMUX" ]; then
+        tmux switch-client -t "$NAME"
+    else
+        tmux attach-session -t "$NAME"
+    fi
 }
+
+# --- UNSHIP FUNCTION ---
+# Kills the tmux session and removes the associated git worktree
 unship() {
+    local OPTIND=1
     local NAME=""
 
     while getopts "n:" opt; do
@@ -72,9 +84,9 @@ unship() {
     echo "Unshipping session: $NAME..."
 
     # Find the worktree path associated with this session's branch
-    local WT_PATH=$(git worktree list | grep "\[happy/$NAME\]" | awk '{print $1}')
+    local WT_PATH=$(git worktree list | grep "\[$NAME\]" | awk '{print $1}')
 
-    # 1. Kill tmux
+    # 1. Kill tmux session
     tmux kill-session -t "$NAME" 2>/dev/null
 
     # 2. Clean up Git Worktree
@@ -82,6 +94,9 @@ unship() {
         git worktree remove "$WT_PATH"
         echo "Worktree $NAME removed."
     else
-        echo "Warning: No worktree found for branch happy/$NAME"
+        echo "Warning: No worktree found for branch fly/$NAME"
     fi
+
+    # 3. Go back to root
+    cd ~
 }

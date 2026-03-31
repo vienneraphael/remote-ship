@@ -38,7 +38,9 @@ ssh-keygen -t ed25519 -C "raspberry-pi" -f ~/.ssh/id_ed25519 -N ""
 # Install Packages
 sudo apt install -y gh npm
 curl -LsSf https://astral.sh/uv/install.sh | sh
+sudo npm i -g @bubblewrap/cli
 sudo npm i -g @openai/codex
+curl -fsSL https://tailscale.com/install.sh | sh
 
 # --- New Logic ---
 
@@ -47,18 +49,15 @@ sudo npm i -g @openai/codex
 echo "Fetching bash functions..."
 curl -LsSf "https://raw.githubusercontent.com/your-repo/path/bash_function.sh" -o ~/.bash_functions
 
-# 2. Create alias for SSH connection
-echo "Creating .bash_aliases..."
-echo "alias connect='ssh $USER@$IP'" > ~/.bash_aliases
-
-# 3. Create/Update .bashrc to source these files
+# 2. Create/Update .bashrc to source these files
 echo "Updating .bashrc..."
 {
     echo ""
     echo "# Load custom functions and aliases"
     echo "if [ -f ~/.bash_functions ]; then . ~/.bash_functions; fi"
-    echo "if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi"
 } >> ~/.bashrc
+
+echo "set -g mouse on" >> ~/.tmux.conf
 
 # Source the bashrc for the current session
 source ~/.bashrc
@@ -69,5 +68,3 @@ echo "Setup Complete!"
 echo "Git Name:   $(git config --global user.name)"
 echo "SSH Alias:  'connect' -> $USER@$IP"
 echo "------------------------------------"
-
-gh auth login
