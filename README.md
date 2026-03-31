@@ -43,7 +43,7 @@ Then enter your password, you should be connected to your RPI.
 ### Launch the setup script
 
 Run this command:
-`curl -sSL https://raw.githubusercontent.com/vienneraphael/remote-ship/main/setup.sh | bash -s -- -n "Your Name" -e "github-email@example.com" -u "rpi-user-name" -i "Your.Tailscale.RPI.IP"`
+`curl -sSL https://raw.githubusercontent.com/vienneraphael/remote-ship/main/setup.sh | bash -s -- -n "Your Name" -e "github-email@example.com" -u "rpi-user-name"`
 
 
 Then run: `gh auth login`
