@@ -53,16 +53,16 @@ _ship_tmux_startup_command() {
 
     cat <<EOF
 if [ -f $quoted_init_script ]; then
-  echo "Running init script: $init_script"
+    echo "Running init script: $init_script"
   bash $quoted_init_script
   init_status=\$?
   if [ \$init_status -ne 0 ]; then
     echo "Init script failed with exit code \$init_status. Codex was not launched."
   else
-    codex
+    codex --full-auto
   fi
 else
-  codex
+  codex --full-auto
 fi
 EOF
 }
