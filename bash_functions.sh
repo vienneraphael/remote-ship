@@ -100,10 +100,10 @@ if [ -f $quoted_init_script ]; then
   if [ \$init_status -ne 0 ]; then
     echo "Init script failed with exit code \$init_status. Codex was not launched."
   else
-    codex --full-auto
+    codex --dangerously-bypass-approvals-and-sandbox
   fi
 else
-  codex --full-auto
+  codex --dangerously-bypass-approvals-and-sandbox
 fi
 EOF
 }
