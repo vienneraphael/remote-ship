@@ -45,6 +45,47 @@ _ship_branch_name() {
     echo "fly/$name"
 }
 
+_ship_resolve_base_ref() {
+    local repo_root="$1"
+    local base_branch="$2"
+    local upstream_ref=""
+    local remote_name=""
+    local remote_branch=""
+
+    if ! git -C "$repo_root" rev-parse --verify "${base_branch}^{commit}" >/dev/null 2>&1; then
+        echo "Error: Base branch '$base_branch' does not exist." >&2
+        return 1
+    fi
+
+    upstream_ref=$(git -C "$repo_root" for-each-ref --format='%(upstream:short)' "refs/heads/$base_branch")
+
+    if [ -z "$upstream_ref" ]; then
+        echo "$base_branch"
+        return 0
+    fi
+
+    remote_name="${upstream_ref%%/*}"
+    remote_branch="${upstream_ref#*/}"
+
+    if [ -z "$remote_name" ] || [ -z "$remote_branch" ] || [ "$remote_name" = "$upstream_ref" ]; then
+        echo "Error: Could not parse upstream '$upstream_ref' for branch '$base_branch'." >&2
+        return 1
+    fi
+
+    echo "Fetching latest '$upstream_ref'..." >&2
+    if ! git -C "$repo_root" fetch "$remote_name" "$remote_branch"; then
+        echo "Error: Could not fetch upstream '$upstream_ref' for branch '$base_branch'." >&2
+        return 1
+    fi
+
+    if ! git -C "$repo_root" rev-parse --verify "${upstream_ref}^{commit}" >/dev/null 2>&1; then
+        echo "Error: Upstream '$upstream_ref' for branch '$base_branch' was not found after fetch." >&2
+        return 1
+    fi
+
+    echo "$upstream_ref"
+}
+
 _ship_tmux_startup_command() {
     local init_script="$1"
     local quoted_init_script
@@ -119,6 +160,7 @@ ship() {
     local worktree_root=""
     local target_dir=""
     local branch_name=""
+    local source_ref=""
     local init_script=""
     local startup_command=""
     local positional_args=()
@@ -176,10 +218,7 @@ ship() {
         return 1
     }
 
-    if ! git -C "$repo_root" rev-parse --verify "${base_branch}^{commit}" >/dev/null 2>&1; then
-        echo "Error: Base branch '$base_branch' does not exist in '$repo_name'."
-        return 1
-    fi
+    source_ref=$(_ship_resolve_base_ref "$repo_root" "$base_branch") || return 1
 
     if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch_name"; then
         echo "Error: Branch '$branch_name' already exists. Use 'unship -n $name' first."
@@ -196,8 +235,8 @@ ship() {
         return 1
     fi
 
-    echo "Creating worktree '$name' from '$base_branch'..."
-    git -C "$repo_root" worktree add -b "$branch_name" "$target_dir" "$base_branch" || return 1
+    echo "Creating worktree '$name' from '$source_ref'..."
+    git -C "$repo_root" worktree add -b "$branch_name" "$target_dir" "$source_ref" || return 1
 
     tmux new-session -d -s "$name" -c "$target_dir" || {
         echo "Error: Could not create tmux session '$name'."
