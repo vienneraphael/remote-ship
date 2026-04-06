@@ -163,6 +163,8 @@ ship() {
     local source_ref=""
     local init_script=""
     local startup_command=""
+    local source_env=""
+    local target_env=""
     local positional_args=()
 
     while getopts "n:p:b:" opt; do
@@ -237,6 +239,15 @@ ship() {
 
     echo "Creating worktree '$name' from '$source_ref'..."
     git -C "$repo_root" worktree add -b "$branch_name" "$target_dir" "$source_ref" || return 1
+
+    source_env="$repo_root/.env"
+    target_env="$target_dir/.env"
+    if [ -f "$source_env" ]; then
+        cp -f "$source_env" "$target_env" || {
+            echo "Error: Could not copy '$source_env' to '$target_env'."
+            return 1
+        }
+    fi
 
     tmux new-session -d -s "$name" -c "$target_dir" || {
         echo "Error: Could not create tmux session '$name'."

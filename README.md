@@ -122,6 +122,7 @@ Notes:
 - Flag form still works: `ship -n <thread-name> -p <project-path> -b <base-branch>`.
 - Worktrees are created under `~/worktrees/<repo-name>/<thread-name>`.
 - Branches are created as `fly/<thread-name>`.
+- If the base repo contains a `.env`, `ship` copies it into the new worktree and overwrites any existing `.env` there.
 
 ### Open Concurrent Threads
 If you want to open a second thread while one processes:
