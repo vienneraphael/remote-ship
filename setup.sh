@@ -51,8 +51,64 @@ if [ -z "$NAME" ] || [ -z "$EMAIL" ]; then
     exit 1
 fi
 
+DOCKER_PACKAGES_TO_REMOVE=(
+    docker.io
+    docker-compose
+    docker-compose-v2
+    docker-doc
+    podman-docker
+    containerd
+    runc
+)
+
+DOCKER_PACKAGES_TO_INSTALL=(
+    docker-ce
+    docker-ce-cli
+    containerd.io
+    docker-buildx-plugin
+    docker-compose-plugin
+)
+
+echo "Configuring Docker apt repository..."
+INSTALLED_DOCKER_PACKAGES=()
+for package in "${DOCKER_PACKAGES_TO_REMOVE[@]}"; do
+    if dpkg -s "$package" >/dev/null 2>&1; then
+        INSTALLED_DOCKER_PACKAGES+=("$package")
+    fi
+done
+
+if [ "${#INSTALLED_DOCKER_PACKAGES[@]}" -gt 0 ]; then
+    sudo apt-get remove -y "${INSTALLED_DOCKER_PACKAGES[@]}"
+fi
+
 retry "$RETRY_ATTEMPTS" sudo apt-get update || {
-    echo "Error: Failed to update apt package lists after $RETRY_ATTEMPTS attempts."
+    echo "Error: Failed to update apt package lists before Docker setup after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
+
+retry "$RETRY_ATTEMPTS" sudo apt-get install -y ca-certificates curl || {
+    echo "Error: Failed to install Docker apt prerequisites after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
+
+sudo install -m 0755 -d /etc/apt/keyrings
+retry "$RETRY_ATTEMPTS" sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc || {
+    echo "Error: Failed to download Docker GPG key after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+retry "$RETRY_ATTEMPTS" sudo apt-get update || {
+    echo "Error: Failed to refresh apt package lists for Docker after $RETRY_ATTEMPTS attempts."
     exit 1
 }
 
@@ -62,8 +118,18 @@ git config --global push.autoSetupRemote true
 
 ssh-keygen -t ed25519 -C "raspberry-pi" -f "$HOME/.ssh/id_ed25519" -N ""
 
-retry "$RETRY_ATTEMPTS" sudo apt install -y bubblewrap gh npm tmux || {
+retry "$RETRY_ATTEMPTS" sudo apt-get install -y \
+    bubblewrap \
+    gh \
+    npm \
+    tmux \
+    "${DOCKER_PACKAGES_TO_INSTALL[@]}" || {
     echo "Error: Failed to install apt packages after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
+
+retry "$RETRY_ATTEMPTS" sudo systemctl start docker || {
+    echo "Error: Failed to start Docker after $RETRY_ATTEMPTS attempts."
     exit 1
 }
 
