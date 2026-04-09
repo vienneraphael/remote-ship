@@ -128,6 +128,11 @@ retry "$RETRY_ATTEMPTS" sudo apt-get install -y \
     exit 1
 }
 
+retry "$RETRY_ATTEMPTS" sudo apt install -y just || {
+    echo "Error: Failed to install just after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
+
 retry "$RETRY_ATTEMPTS" sudo systemctl start docker || {
     echo "Error: Failed to start Docker after $RETRY_ATTEMPTS attempts."
     exit 1
