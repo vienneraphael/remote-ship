@@ -128,8 +128,13 @@ retry "$RETRY_ATTEMPTS" sudo apt-get install -y \
     exit 1
 }
 
+<<<<<<< Updated upstream
 retry "$RETRY_ATTEMPTS" sudo apt install -y just || {
     echo "Error: Failed to install just after $RETRY_ATTEMPTS attempts."
+=======
+retry "$RETRY_ATTEMPTS" sudo apt install -y ripgrep || {
+    echo "Error: Failed to install ripgrep after $RETRY_ATTEMPTS attempts."
+>>>>>>> Stashed changes
     exit 1
 }
 
