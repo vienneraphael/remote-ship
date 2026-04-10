@@ -128,13 +128,13 @@ retry "$RETRY_ATTEMPTS" sudo apt-get install -y \
     exit 1
 }
 
-<<<<<<< Updated upstream
 retry "$RETRY_ATTEMPTS" sudo apt install -y just || {
     echo "Error: Failed to install just after $RETRY_ATTEMPTS attempts."
-=======
+    exit 1
+}
+
 retry "$RETRY_ATTEMPTS" sudo apt install -y ripgrep || {
     echo "Error: Failed to install ripgrep after $RETRY_ATTEMPTS attempts."
->>>>>>> Stashed changes
     exit 1
 }
 
@@ -145,6 +145,16 @@ retry "$RETRY_ATTEMPTS" sudo systemctl start docker || {
 
 retry "$RETRY_ATTEMPTS" bash -lc "curl -LsSf https://astral.sh/uv/install.sh | sh" || {
     echo "Error: Failed to install uv after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
+
+retry "$RETRY_ATTEMPTS" bash -lc "curl -fsSL https://opencode.ai/install | bash" || {
+    echo "Error: Failed to install opencode after $RETRY_ATTEMPTS attempts."
+    exit 1
+}
+
+retry "$RETRY_ATTEMPTS" bash -lc "curl -fsSL https://raw.githubusercontent.com/btriapitsyn/openchamber/main/scripts/install.sh | bash" || {
+    echo "Error: Failed to install openchamber after $RETRY_ATTEMPTS attempts."
     exit 1
 }
 
